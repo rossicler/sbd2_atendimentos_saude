@@ -10,30 +10,31 @@ mydb = MySQLdb.connect(
 )
 
 mycursor = mydb.cursor()
-file_name = input("Digite o nome do arquivo: ")
+file_name = input("Digite o nome do arquivo (Caso seja mais de um, digite separado por virgula, exemplo: sia112018.csv, sia102018.csv): ")
+file_names = [x.strip() for x in file_name.split(",")]
 
 def db_save(sql, items):
     mycursor.executemany(sql, items)
     mydb.commit()
 
 def insert_into_group(groups):
-    sql = "INSERT INTO GRUPO (codGrupo, nomeGrupo) VALUES (%s, %s)"
+    sql = "INSERT INTO GRUPO (codGrupo, nomeGrupo) VALUES (%s, %s) ON DUPLICATE KEY UPDATE codGrupo=codGrupo"
     db_save(sql, groups)
 
 def insert_into_subgrupo(subgroups):
-    sql = "INSERT INTO SUBGRUPO (codSubgrupo, nomeSubgrupo, codGrupo) VALUES (%s, %s, %s)"
+    sql = "INSERT INTO SUBGRUPO (codSubgrupo, nomeSubgrupo, codGrupo) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE codSubgrupo=codSubgrupo"
     db_save(sql, subgroups)
 
 def insert_into_estabelecimento_cnes(estabelecimentos):
-    sql = "INSERT INTO ESTABELECIMENTO_CNES (codEstabelecimento, nomeEstabelecimento) VALUES (%s, %s)"
+    sql = "INSERT INTO ESTABELECIMENTO_CNES (codEstabelecimento, nomeEstabelecimento) VALUES (%s, %s) ON DUPLICATE KEY UPDATE codEstabelecimento=codEstabelecimento"
     db_save(sql, estabelecimentos)
 
 def insert_into_procedimento(procedimentos):
-    sql = "INSERT INTO PROCEDIMENTO (codProcedimento, nomeProcedimento) VALUES (%s, %s)"
+    sql = "INSERT INTO PROCEDIMENTO (codProcedimento, nomeProcedimento) VALUES (%s, %s) ON DUPLICATE KEY UPDATE codProcedimento=codProcedimento"
     db_save (sql, procedimentos)
 
 def insert_into_carater_atendimento(caraters):
-    sql = "INSERT INTO CARATER_ATENDIMENTO (codCarater, nomeCaraterAtendimento) VALUES (%s, %s)"
+    sql = "INSERT INTO CARATER_ATENDIMENTO (codCarater, nomeCaraterAtendimento) VALUES (%s, %s) ON DUPLICATE KEY UPDATE codCarater=codCarater"
     db_save(sql, caraters)
 
 def insert_into_atendimento(atendimentos):
@@ -62,4 +63,8 @@ def import_csv_data(file_name):
     insert_into_atendimento(atendimentos)
     print("Inserted ATENDIMENTOS")
 
-import_csv_data(file_name)
+if len(file_names) > 1:
+    for file in file_names:
+        import_csv_data(file)
+else:
+    import_csv_data(file_name)
