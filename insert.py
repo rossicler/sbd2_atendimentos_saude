@@ -1,5 +1,6 @@
 import MySQLdb
 import pandas as pd
+import math
 
 mydb = MySQLdb.connect(
     host="localhost",
@@ -36,30 +37,45 @@ def insert_into_carater_atendimento(caraters):
     sql = "INSERT INTO CARATER_ATENDIMENTO (codCarater, nomeCaraterAtendimento) VALUES (%s, %s) ON DUPLICATE KEY UPDATE codCarater=codCarater"
     db_save(sql, caraters)
 
-def insert_into_atendimento(atendimentos):
+def insert_into_atendimento(atendimento):
     sql = "INSERT INTO ATENDIMENTO (anoMes, quantidade, codEstabelecimento, codGrupo, codProcedimento, codCarater) VALUES (%s, %s, %s, %s, %s, %s)"
-    db_save(sql, atendimentos)
+    try:
+        mycursor.execute(sql, atendimento)
+        mydb.commit()
+    except Exception as e:
+        print(error)
+
+def get_values(df, base_column, wanted_column):
+    ids = df[base_column].unique()
+    result = []
+    for id in ids:
+        wanted_value = df.loc[df[base_column] == id][wanted_column].unique()[0]
+        if type(wanted_value) is str or not math.isnan(wanted_value):
+            column_result = (id, wanted_value)
+            result.append(column_result)
+    return result
 
 def import_csv_data(file_name):
     data_df = pd.read_csv("./data/{0}".format(file_name), sep=";", encoding="ISO-8859-1")
-    groups = set(list(zip(data_df['cod_grupo'], data_df['grupo'])))
+    groups = get_values(data_df, 'cod_grupo', 'grupo')
     insert_into_group(groups)
     print("Inserted GRUPOS")
     subgrupos = set(list(zip(data_df['cod_subgrupo'], data_df['subgrupo'], data_df['cod_grupo'])))
     insert_into_subgrupo(subgrupos)
     print("Inserted SUBGRUPOS")
-    estabelecimentos = set(list(zip(data_df['cod_estabelecimento_cnes'].unique(), data_df['estabelecimento_cnes'])))
+    estabelecimentos = get_values(data_df, 'cod_estabelecimento_cnes', 'estabelecimento_cnes')
     insert_into_estabelecimento_cnes(estabelecimentos)
     print("Inserted ESTABELECIMENTO_CNES")
-    procedimentos = set(list(zip(data_df['cod_procedimento'].unique(), data_df['procedimento'])))
+    procedimentos = get_values(data_df, 'cod_procedimento', 'procedimento')
     insert_into_procedimento(procedimentos)
     print("Inserted PROCEDIMENTOS")
-    caraters_atendimento = set(list(zip(data_df['cod_carater_atendimento'].unique(), data_df['carater_atendimento'])))
+    caraters_atendimento = get_values(data_df, 'cod_carater_atendimento', 'carater_atendimento')
     insert_into_carater_atendimento(caraters_atendimento)
     print("Inserted CARATERS_ATENDIMENTO")
-    atendimentos = set(list(zip(data_df['ano_mes'], data_df['quantidade'], data_df['cod_estabelecimento_cnes'],
-        data_df['cod_grupo'], data_df['cod_procedimento'], data_df['cod_carater_atendimento'])))
-    insert_into_atendimento(atendimentos)
+    subset = data_df[['ano_mes', 'quantidade', 'cod_estabelecimento_cnes', 'cod_grupo', 'cod_procedimento', 'cod_carater_atendimento']]
+    atendimentos = [tuple(x) for x in subset.values]
+    for atendimento in atendimentos:
+        insert_into_atendimento(atendimento)
     print("Inserted ATENDIMENTOS")
 
 if len(file_names) > 1:
